@@ -49,27 +49,55 @@ weather-app/
 ```
 Auth:
   POST   /api/auth/register      ← create account (email + password)
-  POST   /api/auth/login         ← returns JWT
-  POST   /api/auth/logout        ← invalidates token
+  POST   /api/auth/login         ← returns JWT access token + sets refresh cookie
+  POST   /api/auth/refresh       ← exchange refresh cookie for new access token
+  POST   /api/auth/logout        ← revokes refresh token, clears cookie
   GET    /api/auth/me            ← get current user profile
 
 Weather (all require auth):
-  GET    /api/weather/search?city=Denver    ← geocode + fetch weather
+  GET    /api/weather/search?city=Denver    ← geocode + fetch weather (picks first match)
   GET    /api/weather/coords?lat=X&lon=Y   ← weather by coordinates
-  GET    /api/weather/history               ← user's search history
+  GET    /api/weather/history?page=1&limit=20  ← user's search history (default: page 1, 20 per page, newest first)
 
-Favorites (all require auth):
+Favorites (all require auth, max 5 per user):
   GET    /api/favorites           ← list user's favorites
   POST   /api/favorites           ← add a favorite
   DELETE /api/favorites/:id       ← remove a favorite
 ```
 
+**Request/response examples:**
+
+```jsonc
+// POST /api/auth/register
+// Request:
+{ "email": "user@example.com", "password": "securepassword" }
+// Response 201:
+{ "user": { "id": "...", "email": "user@example.com" }, "accessToken": "eyJ..." }
+
+// POST /api/auth/login
+// Response 200: same as register
+
+// POST /api/favorites
+// Request:
+{ "name": "Denver", "country": "United States", "admin1": "Colorado", "latitude": 39.74, "longitude": -104.99 }
+// Response 201:
+{ "id": "...", "name": "Denver", ... }
+```
+
+**Error response format (all endpoints):**
+```json
+{ "error": { "code": "VALIDATION_ERROR", "message": "Invalid email format" } }
+```
+Status codes: 400 (validation), 401 (unauthorized), 404 (not found), 409 (conflict, e.g. duplicate email), 429 (rate limited).
+
 ### Auth
 
-- Passwords hashed with bcrypt
-- Access token (JWT) held in memory on the client
-- Refresh token in HTTP-only cookie
-- Middleware extracts and verifies JWT on protected routes
+- Passwords hashed with bcrypt (12 salt rounds)
+- Access token (JWT, 15-minute expiry) held in memory on the client
+- Refresh token (JWT, 7-day expiry) in HTTP-only secure cookie
+- Refresh tokens tracked in a `RefreshToken` database table so they can be revoked on logout
+- Middleware extracts and verifies access token on protected routes
+- Client calls `POST /api/auth/refresh` when the access token expires
 
 ### Server-Side Weather Caching
 
@@ -81,7 +109,13 @@ Every endpoint validates inputs with Zod schemas. Type-safe, pairs naturally wit
 
 ### Rate Limiting
 
-express-rate-limit middleware on all routes. Per-user limiting on authenticated routes.
+express-rate-limit middleware:
+- Global: 100 requests per 15-minute window per IP
+- Weather endpoints: 30 requests per minute per authenticated user
+
+### CORS
+
+In production, Express serves the frontend as static files (same origin), so CORS is not needed. In development, the client may run on a different port — configure CORS middleware to allow `http://localhost:*` in development only.
 
 ## Database Schema
 
@@ -93,8 +127,22 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  favorites     Favorite[]
-  searchHistory SearchHistory[]
+  favorites      Favorite[]
+  searchHistory  SearchHistory[]
+  refreshTokens  RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
 }
 
 model Favorite {
@@ -129,20 +177,21 @@ model WeatherCache {
   id        String   @id @default(uuid())
   latitude  Float
   longitude Float
-  unit      String
-  data      Json
+  data      Json                  // stored in Celsius (canonical unit)
   fetchedAt DateTime @default(now())
 
-  @@unique([latitude, longitude, unit])
+  @@unique([latitude, longitude])
   @@index([fetchedAt])
 }
 ```
 
 Key decisions:
-- WeatherCache is user-independent (shared cache).
-- `@@unique([userId, latitude, longitude])` on Favorite replaces the frontend's coordinate-proximity check with a database constraint.
+- WeatherCache is user-independent (shared cache). Always stored in Celsius; the server converts to Fahrenheit at response time if requested. This avoids duplicate cache entries per unit.
+- Cache eviction: a query filter (`WHERE fetchedAt > NOW() - INTERVAL '15 minutes'`) ignores stale entries. A scheduled cleanup (e.g., Prisma `deleteMany` on app startup or a periodic timer) purges old rows.
+- `@@unique([userId, latitude, longitude])` on Favorite replaces the frontend's coordinate-proximity check with a database constraint. Max 5 favorites per user enforced in the API layer.
 - `onDelete: Cascade` on relations ensures user deletion cleans up all associated data.
-- SearchHistory indexed by `[userId, createdAt]` for efficient recent-searches queries.
+- SearchHistory indexed by `[userId, createdAt]` for efficient recent-searches queries. For geolocation searches (no text query), `query` is stored as `"[geolocation]"`.
+- RefreshToken table enables server-side revocation on logout.
 
 ## Frontend Changes
 
@@ -150,7 +199,8 @@ Key decisions:
 - Redirect all `fetch()` calls from Open-Meteo/BigDataCloud to the Express backend.
 - Add auth UI: login/register forms, logout button.
 - Add search history view.
-- Favorites and preferences now sync via the backend instead of localStorage (localStorage used as fallback for unauthenticated state if needed).
+- Favorites sync via the backend instead of localStorage.
+- Theme and unit preferences remain in localStorage (client-side only) — they're UI preferences, not worth a round-trip to the server.
 
 ## Testing Strategy
 
@@ -194,16 +244,22 @@ PRs cannot merge unless all steps pass.
 - `docker-compose.yml` for local development (server + Postgres)
 - Deploy to Railway (free tier) with auto-deploy on push to main
 - Frontend served as static files by Express in production
+- Database migrations: `prisma migrate deploy` runs as a Railway release command before the app starts. Locally, use `prisma migrate dev`.
 
 ### Environment Management
 
-- `.env.example` committed with placeholder values
-- Secrets stored in Railway's environment variables
-- Zod validation on startup — fail fast if required env vars are missing
+Required environment variables:
+- `DATABASE_URL` — Postgres connection string
+- `JWT_SECRET` — signing key for access tokens
+- `JWT_REFRESH_SECRET` — signing key for refresh tokens
+- `PORT` — server port (default: 3000)
+- `NODE_ENV` — `development` or `production`
+
+`.env.example` committed with placeholder values. Secrets stored in Railway's environment variables. Zod validation on startup — fail fast if required env vars are missing.
 
 ## API Documentation
 
-swagger-jsdoc + swagger-ui-express serving interactive docs at `/api/docs`:
+swagger-jsdoc + swagger-ui-express serving interactive docs at `/api/docs` (development only — disabled in production):
 - Endpoints grouped by domain (Auth, Weather, Favorites)
 - Request/response examples with types
 - Auth flows documented
