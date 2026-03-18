@@ -4,6 +4,8 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { errorHandler } from "./middleware/error-handler.js";
+import { globalLimiter } from "./middleware/rate-limit.js";
+import authRoutes from "./routes/auth.js";
 import { config } from "./config.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -13,6 +15,7 @@ export function createApp() {
 
   app.use(express.json());
   app.use(cookieParser());
+  app.use(globalLimiter);
 
   if (config.NODE_ENV === "development") {
     app.use(cors({ origin: /localhost/, credentials: true }));
@@ -24,6 +27,7 @@ export function createApp() {
   });
 
   // --- API routes will be mounted here in later tasks ---
+  app.use("/api/auth", authRoutes);
 
   // Serve frontend in production (MUST be after all API routes)
   if (config.NODE_ENV === "production") {
