@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  favorites      Favorite[]
+  searchHistory  SearchHistory[]
+  refreshTokens  RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  admin1    String?
+  country   String
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+
+  @@unique([userId, latitude, longitude])
+  @@index([userId])
+}
+
+model SearchHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query     String
+  latitude  Float
+  longitude Float
+  cityName  String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model WeatherCache {
+  id        String   @id @default(uuid())
+  latitude  Float
+  longitude Float
+  data      Json
+  fetchedAt DateTime @default(now())
+
+  @@unique([latitude, longitude])
+  @@index([fetchedAt])
+}
