@@ -357,6 +357,8 @@ function renderForecastDay(day: DailyForecast, unitSymbol: string): string {
 // ===========================================
 
 export function showAuthView(): void {
+  authEmail.value = "";
+  authPassword.value = "";
   authContainer.classList.remove("hidden");
   logoutButton.classList.add("hidden");
   userEmailSpan.classList.add("hidden");
