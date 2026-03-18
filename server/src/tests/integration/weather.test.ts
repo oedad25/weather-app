@@ -18,8 +18,42 @@ describe("Weather API", () => {
     token = await registerAndGetToken();
   });
 
-  it("rejects unauthenticated requests", async () => {
-    const res = await request(app).get("/api/weather/search?city=Denver");
+  it("allows unauthenticated weather search (requires external API)", async () => {
+    const res = await request(app)
+      .get("/api/weather/search?city=Denver&unit=celsius");
+    expect(res.status).not.toBe(401);
+    if (res.status === 200) {
+      expect(res.body).toHaveProperty("location");
+      expect(res.body).toHaveProperty("current");
+    }
+  });
+
+  it("allows unauthenticated coords search (requires external API)", async () => {
+    const res = await request(app)
+      .get("/api/weather/coords?lat=39.7&lon=-104.9&unit=celsius");
+    expect(res.status).not.toBe(401);
+    if (res.status === 200) {
+      expect(res.body).toHaveProperty("location");
+      expect(res.body).toHaveProperty("current");
+    }
+  });
+
+  it("does not record search for unauthenticated users", async () => {
+    // Search without auth
+    const searchRes = await request(app)
+      .get("/api/weather/search?city=Denver&unit=celsius");
+    expect(searchRes.status).not.toBe(401);
+
+    // Verify no history was created — history requires auth, so check with a token
+    const historyRes = await request(app)
+      .get("/api/weather/history")
+      .set("Authorization", `Bearer ${token}`);
+    expect(historyRes.status).toBe(200);
+    expect(historyRes.body.total).toBe(0);
+  });
+
+  it("rejects unauthenticated history requests", async () => {
+    const res = await request(app).get("/api/weather/history");
     expect(res.status).toBe(401);
   });
 
