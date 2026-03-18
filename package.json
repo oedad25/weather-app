@@ -1,5 +1,5 @@
 {
-  "dependencies": {
-    "typescript": "^5.9.3"
-  }
+  "name": "skycheck",
+  "private": true,
+  "workspaces": ["client", "server", "e2e"]
 }

@@ -628,3 +628,76 @@ body {
     padding: 0.4rem 0.5rem 0.4rem 0.7rem;
   }
 }
+
+/* --- Auth --- */
+.auth-container { display: flex; justify-content: center; padding: 2rem 0; }
+.auth-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem 2rem;
+  box-shadow: 0 8px 24px var(--color-shadow-lg);
+  width: 100%;
+  max-width: 400px;
+  transition: background 0.3s;
+}
+.auth-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--color-text);
+}
+.auth-title span { color: var(--color-accent); }
+.auth-form { display: flex; flex-direction: column; gap: 0.75rem; }
+.auth-form input {
+  padding: 0.85rem 1rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.auth-form input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+.auth-buttons { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+.auth-buttons .btn { flex: 1; }
+.auth-error { color: #ef4444; font-size: 0.85rem; text-align: center; margin-top: 0.5rem; }
+.user-email {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- History --- */
+.history-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px var(--color-shadow);
+  margin-top: 1rem;
+  transition: background 0.3s;
+}
+.history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.history-item:hover { color: var(--color-accent); }
+.history-item:last-child { border-bottom: none; }
+.history-time { font-size: 0.75rem; color: var(--color-text-muted); }

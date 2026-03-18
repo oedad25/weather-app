@@ -1,0 +1,54 @@
+import express from "express";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+import swaggerUi from "swagger-ui-express";
+import { errorHandler } from "./middleware/error-handler.js";
+import { globalLimiter } from "./middleware/rate-limit.js";
+import authRoutes from "./routes/auth.js";
+import weatherRoutes from "./routes/weather.js";
+import favoritesRoutes from "./routes/favorites.js";
+import { config } from "./config.js";
+import { swaggerSpec } from "./swagger.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+export function createApp() {
+  const app = express();
+
+  app.use(express.json());
+  app.use(cookieParser());
+  app.use(globalLimiter);
+
+  if (config.NODE_ENV === "development") {
+    app.use(cors({ origin: /localhost/, credentials: true }));
+  }
+
+  // Health check
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok" });
+  });
+
+  // --- API routes will be mounted here in later tasks ---
+  app.use("/api/auth", authRoutes);
+  app.use("/api/weather", weatherRoutes);
+  app.use("/api/favorites", favoritesRoutes);
+
+  if (config.NODE_ENV === "development") {
+    app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  }
+
+  // Serve frontend in production (MUST be after all API routes)
+  if (config.NODE_ENV === "production") {
+    const clientPath = path.join(__dirname, "../../client");
+    app.use(express.static(clientPath));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(clientPath, "index.html"));
+    });
+  }
+
+  app.use(errorHandler);
+
+  return app;
+}

@@ -88,6 +88,18 @@ const welcomeContainer = document.getElementById(
 const favoritesContainer = document.getElementById(
   "favorites-container"
 ) as HTMLElement;
+const authContainer = document.getElementById("auth-container") as HTMLElement;
+const authForm = document.getElementById("auth-form") as HTMLFormElement;
+const authEmail = document.getElementById("auth-email") as HTMLInputElement;
+const authPassword = document.getElementById("auth-password") as HTMLInputElement;
+const authError = document.getElementById("auth-error") as HTMLElement;
+const registerButton = document.getElementById("register-button") as HTMLButtonElement;
+const logoutButton = document.getElementById("logout-button") as HTMLButtonElement;
+const userEmailSpan = document.getElementById("user-email") as HTMLElement;
+const historyButton = document.getElementById("history-button") as HTMLButtonElement;
+const historyContainer = document.getElementById("history-container") as HTMLElement;
+const historyList = document.getElementById("history-list") as HTMLElement;
+const historyClose = document.getElementById("history-close") as HTMLButtonElement;
 
 // ===========================================
 // Event Listeners
@@ -338,4 +350,89 @@ function renderForecastDay(day: DailyForecast, unitSymbol: string): string {
       </span>
     </div>
   `;
+}
+
+// ===========================================
+// Auth & History UI
+// ===========================================
+
+export function showAuthView(): void {
+  authContainer.classList.remove("hidden");
+  logoutButton.classList.add("hidden");
+  userEmailSpan.classList.add("hidden");
+  historyButton.classList.add("hidden");
+  weatherContainer.classList.add("hidden");
+  welcomeContainer.classList.add("hidden");
+  favoritesContainer.classList.add("hidden");
+  loadingContainer.classList.add("hidden");
+  errorContainer.classList.add("hidden");
+  historyContainer.classList.add("hidden");
+  document.querySelector(".search-bar")?.classList.add("hidden");
+}
+
+export function showAppView(email: string): void {
+  authContainer.classList.add("hidden");
+  logoutButton.classList.remove("hidden");
+  userEmailSpan.classList.remove("hidden");
+  historyButton.classList.remove("hidden");
+  userEmailSpan.textContent = email;
+  document.querySelector(".search-bar")?.classList.remove("hidden");
+  welcomeContainer.classList.remove("hidden");
+}
+
+export function showAuthError(message: string): void {
+  authError.textContent = message;
+  authError.classList.remove("hidden");
+}
+
+export function clearAuthError(): void {
+  authError.classList.add("hidden");
+}
+
+export function getAuthInputs(): { email: string; password: string } {
+  return { email: authEmail.value.trim(), password: authPassword.value };
+}
+
+export function onLogin(callback: (email: string, password: string) => void): void {
+  authForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const { email, password } = getAuthInputs();
+    if (email && password) callback(email, password);
+  });
+}
+
+export function onRegister(callback: (email: string, password: string) => void): void {
+  registerButton.addEventListener("click", () => {
+    const { email, password } = getAuthInputs();
+    if (email && password) callback(email, password);
+  });
+}
+
+export function onLogout(callback: () => void): void {
+  logoutButton.addEventListener("click", callback);
+}
+
+export function onHistoryToggle(callback: () => void): void {
+  historyButton.addEventListener("click", callback);
+  historyClose.addEventListener("click", () => {
+    historyContainer.classList.add("hidden");
+  });
+}
+
+export function renderHistory(items: Array<{ query: string; cityName: string; createdAt: string }>): void {
+  historyContainer.classList.remove("hidden");
+  if (items.length === 0) {
+    historyList.innerHTML = '<p style="color: var(--color-text-muted); text-align: center;">No searches yet</p>';
+    return;
+  }
+  historyList.innerHTML = items.map((item) => {
+    const time = new Date(item.createdAt).toLocaleString("en-US", {
+      month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+    });
+    const label = item.query === "[geolocation]" ? item.cityName : item.query;
+    return `<div class="history-item">
+      <span>${item.cityName}${item.query !== "[geolocation]" && item.query !== item.cityName ? ` (${item.query})` : ""}</span>
+      <span class="history-time">${time}</span>
+    </div>`;
+  }).join("");
 }
