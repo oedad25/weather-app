@@ -76,7 +76,7 @@ async function fetchWeatherWithCache(lat: number, lon: number, unit: string) {
     daily: "weather_code,temperature_2m_max,temperature_2m_min",
     temperature_unit: "celsius",
     wind_speed_unit: "kmh",
-    forecast_days: "5",
+    forecast_days: "10",
     timezone: "auto",
   });
 

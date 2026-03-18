@@ -33,7 +33,7 @@ export interface CurrentWeather {
 }
 
 /**
- * One day in the 5-day forecast.
+ * One day in the 10-day forecast.
  */
 export interface DailyForecast {
   date: string; // e.g. "2025-01-15"
