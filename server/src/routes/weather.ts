@@ -9,6 +9,34 @@ const router = Router();
 router.use(requireAuth);
 router.use(weatherLimiter);
 
+/**
+ * @openapi
+ * /api/weather/search:
+ *   get:
+ *     summary: Search weather by city name
+ *     tags: [Weather]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: city
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: City name to search
+ *       - in: query
+ *         name: unit
+ *         schema:
+ *           type: string
+ *           enum: [fahrenheit, celsius]
+ *           default: fahrenheit
+ *         description: Temperature unit
+ *     responses:
+ *       200:
+ *         description: Weather data for the city
+ *       404:
+ *         description: City not found
+ */
 router.get("/search", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { city, unit } = searchSchema.parse(req.query);
@@ -33,6 +61,38 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
+/**
+ * @openapi
+ * /api/weather/coords:
+ *   get:
+ *     summary: Search weather by coordinates
+ *     tags: [Weather]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: lat
+ *         required: true
+ *         schema:
+ *           type: number
+ *         description: Latitude
+ *       - in: query
+ *         name: lon
+ *         required: true
+ *         schema:
+ *           type: number
+ *         description: Longitude
+ *       - in: query
+ *         name: unit
+ *         schema:
+ *           type: string
+ *           enum: [fahrenheit, celsius]
+ *           default: fahrenheit
+ *         description: Temperature unit
+ *     responses:
+ *       200:
+ *         description: Weather data for the coordinates
+ */
 router.get("/coords", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { lat, lon, unit } = coordsSchema.parse(req.query);
@@ -52,6 +112,31 @@ router.get("/coords", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
+/**
+ * @openapi
+ * /api/weather/history:
+ *   get:
+ *     summary: Get search history
+ *     tags: [Weather]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: number
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: number
+ *           default: 20
+ *         description: Results per page
+ *     responses:
+ *       200:
+ *         description: Paginated search history
+ */
 router.get("/history", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page, limit } = historySchema.parse(req.query);

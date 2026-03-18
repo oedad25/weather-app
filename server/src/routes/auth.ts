@@ -13,6 +13,34 @@ const REFRESH_COOKIE_OPTIONS = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
+/**
+ * @openapi
+ * /api/auth/register:
+ *   post:
+ *     summary: Create a new account
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       201:
+ *         description: User created
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: Email already taken
+ */
 router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = registerSchema.parse(req.body);
@@ -24,6 +52,31 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
   }
 });
 
+/**
+ * @openapi
+ * /api/auth/login:
+ *   post:
+ *     summary: Login to an existing account
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post("/login", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
@@ -35,6 +88,18 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
+/**
+ * @openapi
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh access token using refresh cookie
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: New access token issued
+ *       401:
+ *         description: No or invalid refresh token
+ */
 router.post("/refresh", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.cookies.refreshToken;
@@ -49,6 +114,16 @@ router.post("/refresh", async (req: Request, res: Response, next: NextFunction) 
   }
 });
 
+/**
+ * @openapi
+ * /api/auth/logout:
+ *   post:
+ *     summary: Clear refresh token and log out
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ */
 router.post("/logout", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.cookies.refreshToken;
@@ -62,6 +137,20 @@ router.post("/logout", async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
+/**
+ * @openapi
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current authenticated user
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user
+ *       401:
+ *         description: Unauthorized
+ */
 router.get("/me", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await authService.getMe(req.userId!);
