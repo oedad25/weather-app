@@ -40,7 +40,7 @@ Remove `requireAuth` from weather search and coords routes. Add `optionalAuth` s
 - Modify `renderWeatherWithFavorite`: if `isGuest`, always pass `isSaved: false` and `onToggleFavorite: undefined` — this causes the star button to not render (existing `renderWeather` only wires the star if `onToggleFavorite` is provided).
 - Modify `handleToggleFavorite`: add early return if `isGuest` (should not be reachable, but defensive).
 - Modify `handleHistoryToggle`: add early return if `isGuest` (defensive — button is hidden but guard is cheap).
-- Add `handleLoginClick` function: calls `showAuthView()` to switch to the login/register form, and shows the "Continue as guest" link. Wire it to `onLoginClick` UI event.
+- Add `handleLoginClick` function: calls `showAuthView()` then calls `showGuestLink()` to reveal the "Continue as guest" link. Wire it to `onLoginClick` UI event. The link only appears when navigating from guest mode to auth, not on initial load.
 - Add `handleGuestLink` function: calls `showGuestAppView()` to return from the auth form to guest mode. Wire it to `onGuestLink` UI event.
 - Modify `showLoggedInApp`: set `isGuest = false`.
 
@@ -72,8 +72,9 @@ Remove `requireAuth` from weather search and coords routes. Add `optionalAuth` s
 
 - **Remove** the existing `"rejects unauthenticated requests"` test (it asserts search returns 401 without auth — this is now the opposite of expected behavior).
 - **Add** test: `"allows unauthenticated weather search"` — `GET /api/weather/search?city=Denver&unit=celsius` without auth token returns 200.
+- **Add** test: `"allows unauthenticated coords search"` — `GET /api/weather/coords?lat=39.7&lon=-104.9&unit=celsius` without auth token returns 200.
 - **Add** test: `"does not record search for unauthenticated users"` — search without token returns 200 but no history entry is created.
-- Existing test: `GET /api/weather/history` without auth token still returns 401 (add explicit test if not present).
+- **Add** test: `"rejects unauthenticated history requests"` — `GET /api/weather/history` without auth token returns 401.
 
 ### E2E test: modify `e2e/tests/user-journey.spec.ts`
 
