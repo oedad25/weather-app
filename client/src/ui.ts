@@ -318,7 +318,7 @@ export function renderWeather(
       </div>
     </div>
     <div class="forecast">
-      <h3 class="forecast-title">5-Day Forecast</h3>
+      <h3 class="forecast-title">10-Day Forecast</h3>
       <div class="forecast-grid">
         ${data.daily.map((day) => renderForecastDay(day, unitSymbol)).join("")}
       </div>
