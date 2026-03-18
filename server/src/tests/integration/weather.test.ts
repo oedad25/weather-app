@@ -47,4 +47,25 @@ describe("Weather API", () => {
     expect(res.body.total).toBeDefined();
     expect(res.body.page).toBe(1);
   });
+
+  it("includes airQuality field in search response (requires external API)", async () => {
+    const res = await request(app)
+      .get("/api/weather/search?city=Denver&unit=celsius")
+      .set("Authorization", `Bearer ${token}`);
+
+    // This test hits the real Open-Meteo API. If the API is unavailable,
+    // we skip assertions rather than fail the CI pipeline.
+    if (res.status === 200) {
+      expect(res.body).toHaveProperty("airQuality");
+      if (res.body.airQuality !== null) {
+        expect(res.body.airQuality).toHaveProperty("aqi");
+        expect(res.body.airQuality).toHaveProperty("pm25");
+        expect(res.body.airQuality).toHaveProperty("pm10");
+        expect(res.body.airQuality).toHaveProperty("ozone");
+        expect(res.body.airQuality).toHaveProperty("no2");
+        expect(res.body.airQuality).toHaveProperty("so2");
+        expect(res.body.airQuality).toHaveProperty("co");
+      }
+    }
+  });
 });

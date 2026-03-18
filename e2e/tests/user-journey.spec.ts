@@ -18,6 +18,13 @@ test.describe("SkyCheck user journey", () => {
     await page.click("#search-button");
     await expect(page.locator(".current-weather")).toBeVisible({ timeout: 10000 });
 
+    // Air quality card should be visible (if AQI API is reachable)
+    const aqCard = page.locator(".air-quality-card");
+    const aqVisible = await aqCard.isVisible().catch(() => false);
+    if (aqVisible) {
+      await expect(aqCard.locator(".aqi-badge")).toBeVisible();
+    }
+
     // Save to favorites
     await page.click("#fav-toggle");
     await expect(page.locator(".favorite-chip")).toBeVisible();

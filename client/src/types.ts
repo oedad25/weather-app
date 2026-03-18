@@ -33,13 +33,27 @@ export interface CurrentWeather {
 }
 
 /**
- * One day in the 5-day forecast.
+ * One day in the 10-day forecast.
  */
 export interface DailyForecast {
   date: string; // e.g. "2025-01-15"
   maxTemp: number;
   minTemp: number;
   weatherCode: number;
+}
+
+/**
+ * Real-time air quality data from Open-Meteo.
+ * AQI uses the US EPA scale (0-500+).
+ */
+export interface AirQuality {
+  aqi: number;
+  pm25: number;   // μg/m³
+  pm10: number;   // μg/m³
+  ozone: number;  // μg/m³
+  no2: number;    // μg/m³
+  so2: number;    // μg/m³
+  co: number;     // μg/m³ (display as mg/m³ by dividing by 1000)
 }
 
 /**
@@ -50,6 +64,7 @@ export interface WeatherData {
   location: GeoLocation;
   current: CurrentWeather;
   daily: DailyForecast[];
+  airQuality: AirQuality | null;
 }
 
 /**

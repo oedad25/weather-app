@@ -12,7 +12,7 @@ A full-stack weather application with Express backend, PostgreSQL persistence, J
 - **User authentication** with JWT (access + refresh tokens)
 - **City search** with geocoding (handles international cities)
 - **Browser geolocation** for current location weather
-- **5-day forecast** with high/low temperatures
+- **10-day forecast** with high/low temperatures
 - **Celsius / Fahrenheit** toggle with server-side conversion
 - **Dark / Light theme** with smooth transitions
 - **Favorite cities** — save up to 5 (persisted server-side)

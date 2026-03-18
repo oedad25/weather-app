@@ -4,6 +4,7 @@ import { convertWeatherData } from "../utils/temperature.js";
 const GEO_BASE = "https://geocoding-api.open-meteo.com/v1/search";
 const WEATHER_BASE = "https://api.open-meteo.com/v1/forecast";
 const REVERSE_GEO_BASE = "https://api.bigdatacloud.net/data/reverse-geocode-client";
+const AIR_QUALITY_BASE = "https://air-quality-api.open-meteo.com/v1/air-quality";
 
 const CACHE_TTL_MS = 15 * 60 * 1000;
 
@@ -65,7 +66,7 @@ async function fetchWeatherWithCache(lat: number, lon: number, unit: string) {
   });
 
   if (cached && Date.now() - cached.fetchedAt.getTime() < CACHE_TTL_MS) {
-    const data = cached.data as any;
+    const data = { ...(cached.data as any), airQuality: (cached.data as any).airQuality ?? null };
     return unit === "fahrenheit" ? convertWeatherData(data) : data;
   }
 
@@ -76,13 +77,17 @@ async function fetchWeatherWithCache(lat: number, lon: number, unit: string) {
     daily: "weather_code,temperature_2m_max,temperature_2m_min",
     temperature_unit: "celsius",
     wind_speed_unit: "kmh",
-    forecast_days: "5",
+    forecast_days: "10",
     timezone: "auto",
   });
 
-  const res = await fetch(`${WEATHER_BASE}?${params}`);
-  if (!res.ok) throw new Error("Weather fetch failed");
-  const raw = await res.json();
+  const [weatherRes, airQuality] = await Promise.all([
+    fetch(`${WEATHER_BASE}?${params}`),
+    fetchAirQuality(lat, lon),
+  ]);
+
+  if (!weatherRes.ok) throw new Error("Weather fetch failed");
+  const raw = await weatherRes.json();
 
   const weatherData = {
     current: {
@@ -99,6 +104,7 @@ async function fetchWeatherWithCache(lat: number, lon: number, unit: string) {
       minTemp: raw.daily.temperature_2m_min[i],
       weatherCode: raw.daily.weather_code[i],
     })),
+    airQuality,
   };
 
   await prisma.weatherCache.upsert({
@@ -141,4 +147,36 @@ export async function cleanupStaleCache() {
   await prisma.weatherCache.deleteMany({
     where: { fetchedAt: { lt: cutoff } },
   });
+}
+
+async function fetchAirQuality(lat: number, lon: number) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const params = new URLSearchParams({
+      latitude: lat.toString(),
+      longitude: lon.toString(),
+      current: "us_aqi,pm10,pm2_5,nitrogen_dioxide,ozone,sulphur_dioxide,carbon_monoxide",
+      timezone: "auto",
+    });
+
+    const res = await fetch(`${AIR_QUALITY_BASE}?${params}`, { signal: controller.signal });
+    if (!res.ok) return null;
+    const raw = await res.json();
+
+    return {
+      aqi: raw.current.us_aqi,
+      pm25: raw.current.pm2_5,
+      pm10: raw.current.pm10,
+      ozone: raw.current.ozone,
+      no2: raw.current.nitrogen_dioxide,
+      so2: raw.current.sulphur_dioxide,
+      co: raw.current.carbon_monoxide,
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
