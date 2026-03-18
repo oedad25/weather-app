@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 import { errorHandler } from "./middleware/error-handler.js";
 import { globalLimiter } from "./middleware/rate-limit.js";
 import authRoutes from "./routes/auth.js";
+import weatherRoutes from "./routes/weather.js";
+import favoritesRoutes from "./routes/favorites.js";
 import { config } from "./config.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,6 +30,8 @@ export function createApp() {
 
   // --- API routes will be mounted here in later tasks ---
   app.use("/api/auth", authRoutes);
+  app.use("/api/weather", weatherRoutes);
+  app.use("/api/favorites", favoritesRoutes);
 
   // Serve frontend in production (MUST be after all API routes)
   if (config.NODE_ENV === "production") {
