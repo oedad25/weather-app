@@ -11,6 +11,7 @@ import {
   DailyForecast,
   TemperatureUnit,
   GeoLocation,
+  AirQuality,
 } from "./types.js";
 
 import { Theme } from "./storage.js";
@@ -249,6 +250,59 @@ export function renderFavorites(
 // Weather Display
 // ===========================================
 
+function getAqiCategory(aqi: number): { label: string; cssClass: string } {
+  if (aqi <= 50) return { label: "Good", cssClass: "aqi-good" };
+  if (aqi <= 100) return { label: "Moderate", cssClass: "aqi-moderate" };
+  if (aqi <= 150) return { label: "Unhealthy for Sensitive Groups", cssClass: "aqi-sensitive" };
+  if (aqi <= 200) return { label: "Unhealthy", cssClass: "aqi-unhealthy" };
+  if (aqi <= 300) return { label: "Very Unhealthy", cssClass: "aqi-very-unhealthy" };
+  return { label: "Hazardous", cssClass: "aqi-hazardous" };
+}
+
+function renderAirQuality(aq: AirQuality): string {
+  const category = getAqiCategory(aq.aqi);
+  return `
+    <div class="air-quality-card">
+      <h3 class="forecast-title">Air Quality</h3>
+      <div class="aqi-header">
+        <span class="aqi-badge ${category.cssClass}">${aq.aqi} — ${category.label}</span>
+      </div>
+      <div class="pollutant-grid">
+        <div class="pollutant-item">
+          <span class="pollutant-label">PM2.5</span>
+          <span class="pollutant-value">${aq.pm25.toFixed(1)}</span>
+          <span class="pollutant-unit">μg/m³</span>
+        </div>
+        <div class="pollutant-item">
+          <span class="pollutant-label">PM10</span>
+          <span class="pollutant-value">${aq.pm10.toFixed(1)}</span>
+          <span class="pollutant-unit">μg/m³</span>
+        </div>
+        <div class="pollutant-item">
+          <span class="pollutant-label">O₃</span>
+          <span class="pollutant-value">${aq.ozone.toFixed(1)}</span>
+          <span class="pollutant-unit">μg/m³</span>
+        </div>
+        <div class="pollutant-item">
+          <span class="pollutant-label">NO₂</span>
+          <span class="pollutant-value">${aq.no2.toFixed(1)}</span>
+          <span class="pollutant-unit">μg/m³</span>
+        </div>
+        <div class="pollutant-item">
+          <span class="pollutant-label">SO₂</span>
+          <span class="pollutant-value">${aq.so2.toFixed(1)}</span>
+          <span class="pollutant-unit">μg/m³</span>
+        </div>
+        <div class="pollutant-item">
+          <span class="pollutant-label">CO</span>
+          <span class="pollutant-value">${(aq.co / 1000).toFixed(1)}</span>
+          <span class="pollutant-unit">mg/m³</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 /**
  * Render the full weather display with a favorite ★/☆ toggle.
  *
@@ -317,6 +371,7 @@ export function renderWeather(
         </div>
       </div>
     </div>
+    ${data.airQuality ? renderAirQuality(data.airQuality) : ""}
     <div class="forecast">
       <h3 class="forecast-title">10-Day Forecast</h3>
       <div class="forecast-grid">
