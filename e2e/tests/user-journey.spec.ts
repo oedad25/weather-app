@@ -37,11 +37,14 @@ test.describe("SkyCheck user journey", () => {
     const theme = await page.locator("html").getAttribute("data-theme");
     expect(theme).toBe("dark");
 
-    // Logout
+    // Logout — should go to guest mode, not auth wall
     await page.click('[data-testid="logout-button"]');
-    await expect(page.locator('[data-testid="email-input"]')).toBeVisible();
+    await expect(page.locator("#login-link")).toBeVisible();
+    await expect(page.locator(".search-bar")).toBeVisible();
 
-    // Login
+    // Click login link to show auth form, then login
+    await page.click("#login-link");
+    await expect(page.locator('[data-testid="email-input"]')).toBeVisible();
     await page.fill('[data-testid="email-input"]', email);
     await page.fill('[data-testid="password-input"]', password);
     await page.click('[data-testid="login-button"]');
@@ -49,5 +52,24 @@ test.describe("SkyCheck user journey", () => {
 
     // Favorites should persist
     await expect(page.locator(".favorite-chip")).toBeVisible();
+  });
+
+  test("guest mode: search weather without logging in", async ({ page }) => {
+    await page.goto("/");
+
+    // Guest mode: search bar and login link visible, auth-only UI hidden
+    await expect(page.locator(".search-bar")).toBeVisible();
+    await expect(page.locator("#login-link")).toBeVisible();
+    await expect(page.locator('[data-testid="logout-button"]')).not.toBeVisible();
+    await expect(page.locator("#history-button")).not.toBeVisible();
+    await expect(page.locator("#favorites-container")).not.toBeVisible();
+
+    // Search for a city
+    await page.fill("#search-input", "Denver");
+    await page.click("#search-button");
+    await expect(page.locator(".current-weather")).toBeVisible({ timeout: 10000 });
+
+    // No star button for guests
+    await expect(page.locator("#fav-toggle")).not.toBeVisible();
   });
 });
