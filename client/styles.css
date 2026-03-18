@@ -762,3 +762,39 @@ body {
 .history-item:hover { color: var(--color-accent); }
 .history-item:last-child { border-bottom: none; }
 .history-time { font-size: 0.75rem; color: var(--color-text-muted); }
+
+/* ===========================================
+   Guest Mode Links
+   =========================================== */
+
+.login-link {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-accent);
+  text-decoration: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
+}
+
+.login-link:hover {
+  background: var(--color-accent-soft);
+  text-decoration: underline;
+}
+
+.guest-link {
+  display: block;
+  text-align: center;
+  margin-top: 16px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.guest-link:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
