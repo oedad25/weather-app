@@ -101,6 +101,8 @@ const historyButton = document.getElementById("history-button") as HTMLButtonEle
 const historyContainer = document.getElementById("history-container") as HTMLElement;
 const historyList = document.getElementById("history-list") as HTMLElement;
 const historyClose = document.getElementById("history-close") as HTMLButtonElement;
+const loginLink = document.getElementById("login-link") as HTMLAnchorElement;
+const guestLink = document.getElementById("guest-link") as HTMLAnchorElement;
 
 // ===========================================
 // Event Listeners
@@ -171,6 +173,7 @@ export function applyTheme(theme: Theme): void {
 // ===========================================
 
 export function showLoading(): void {
+  authContainer.classList.add("hidden");
   welcomeContainer.classList.add("hidden");
   weatherContainer.classList.add("hidden");
   errorContainer.classList.add("hidden");
@@ -178,6 +181,7 @@ export function showLoading(): void {
 }
 
 export function showError(message: string): void {
+  authContainer.classList.add("hidden");
   loadingContainer.classList.add("hidden");
   weatherContainer.classList.add("hidden");
   welcomeContainer.classList.add("hidden");
@@ -317,6 +321,7 @@ export function renderWeather(
   isSaved: boolean = false,
   onToggleFavorite?: () => void
 ): void {
+  authContainer.classList.add("hidden");
   loadingContainer.classList.add("hidden");
   errorContainer.classList.add("hidden");
   welcomeContainer.classList.add("hidden");
@@ -337,10 +342,10 @@ export function renderWeather(
     minute: "2-digit",
   });
 
-  // Star button: filled ★ if saved, outline ☆ if not
-  const starIcon = isSaved ? "★" : "☆";
-  const starTitle = isSaved ? "Remove from favorites" : "Save to favorites";
-  const starClass = isSaved ? "fav-star saved" : "fav-star";
+  // Star button: only shown when onToggleFavorite callback is provided (logged-in users)
+  const starHtml = onToggleFavorite
+    ? `<button class="${isSaved ? "fav-star saved" : "fav-star"}" id="fav-toggle" title="${isSaved ? "Remove from favorites" : "Save to favorites"}">${isSaved ? "★" : "☆"}</button>`
+    : "";
 
   weatherContainer.innerHTML = `
     <div class="current-weather">
@@ -352,7 +357,7 @@ export function renderWeather(
             <span class="condition-label">${condition.label}</span>
           </div>
         </div>
-        <button class="${starClass}" id="fav-toggle" title="${starTitle}">${starIcon}</button>
+        ${starHtml}
       </div>
       <div class="location-name">${locationStr}</div>
       <div class="last-updated">Updated at ${timeStr}</div>
@@ -425,16 +430,64 @@ export function showAuthView(): void {
   errorContainer.classList.add("hidden");
   historyContainer.classList.add("hidden");
   document.querySelector(".search-bar")?.classList.add("hidden");
+  loginLink.classList.add("hidden");
+  hideGuestLink();
 }
 
 export function showAppView(email: string): void {
   authContainer.classList.add("hidden");
+  loginLink.classList.add("hidden");
   logoutButton.classList.remove("hidden");
   userEmailSpan.classList.remove("hidden");
   historyButton.classList.remove("hidden");
   userEmailSpan.textContent = email;
   document.querySelector(".search-bar")?.classList.remove("hidden");
   welcomeContainer.classList.remove("hidden");
+}
+
+export function showGuestAppView(): void {
+  authContainer.classList.remove("hidden");
+  logoutButton.classList.add("hidden");
+  userEmailSpan.classList.add("hidden");
+  historyButton.classList.add("hidden");
+  favoritesContainer.classList.add("hidden");
+  weatherContainer.classList.add("hidden");
+  loadingContainer.classList.add("hidden");
+  errorContainer.classList.add("hidden");
+  historyContainer.classList.add("hidden");
+  loginLink.classList.add("hidden");
+  document.querySelector(".search-bar")?.classList.remove("hidden");
+  welcomeContainer.classList.add("hidden");
+}
+
+export function onLoginClick(callback: () => void): void {
+  loginLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    callback();
+  });
+}
+
+export function onGuestLink(callback: () => void): void {
+  guestLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    callback();
+  });
+}
+
+export function showLoginLink(): void {
+  loginLink.classList.remove("hidden");
+}
+
+export function hideLoginLink(): void {
+  loginLink.classList.add("hidden");
+}
+
+export function showGuestLink(): void {
+  guestLink.classList.remove("hidden");
+}
+
+export function hideGuestLink(): void {
+  guestLink.classList.add("hidden");
 }
 
 export function showAuthError(message: string): void {

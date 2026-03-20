@@ -1,12 +1,12 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import { weatherLimiter } from "../middleware/rate-limit.js";
 import { searchSchema, coordsSchema, historySchema } from "../schemas/weather.js";
 import * as weatherService from "../services/weather.js";
 
 const router = Router();
 
-router.use(requireAuth);
+router.use(optionalAuth);
 router.use(weatherLimiter);
 
 /**
@@ -47,13 +47,15 @@ router.get("/search", async (req: Request, res: Response, next: NextFunction) =>
       return;
     }
 
-    await weatherService.recordSearch(
-      req.userId!,
-      city,
-      result.location.latitude,
-      result.location.longitude,
-      result.location.name,
-    );
+    if (req.userId) {
+      await weatherService.recordSearch(
+        req.userId,
+        city,
+        result.location.latitude,
+        result.location.longitude,
+        result.location.name,
+      );
+    }
 
     res.json(result);
   } catch (err) {
@@ -98,13 +100,15 @@ router.get("/coords", async (req: Request, res: Response, next: NextFunction) =>
     const { lat, lon, unit } = coordsSchema.parse(req.query);
     const result = await weatherService.searchByCoords(lat, lon, unit);
 
-    await weatherService.recordSearch(
-      req.userId!,
-      "[geolocation]",
-      lat,
-      lon,
-      result.location.name,
-    );
+    if (req.userId) {
+      await weatherService.recordSearch(
+        req.userId,
+        "[geolocation]",
+        lat,
+        lon,
+        result.location.name,
+      );
+    }
 
     res.json(result);
   } catch (err) {
@@ -137,7 +141,7 @@ router.get("/coords", async (req: Request, res: Response, next: NextFunction) =>
  *       200:
  *         description: Paginated search history
  */
-router.get("/history", async (req: Request, res: Response, next: NextFunction) => {
+router.get("/history", requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { page, limit } = historySchema.parse(req.query);
     const result = await weatherService.getHistory(req.userId!, page, limit);

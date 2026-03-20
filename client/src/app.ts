@@ -9,6 +9,8 @@ import {
   onRegister,
   onLogout,
   onHistoryToggle,
+  onLoginClick,
+  onGuestLink,
   setGeoButtonLoading,
   showLoading,
   showError,
@@ -19,6 +21,9 @@ import {
   applyTheme,
   showAuthView,
   showAppView,
+  showGuestAppView,
+  showLoginLink,
+  showGuestLink,
   showAuthError,
   clearAuthError,
 } from "./ui.js";
@@ -30,6 +35,7 @@ let currentTheme: Theme = getSavedTheme();
 let lastLocation: GeoLocation | null = null;
 let lastWeatherData: WeatherData | null = null;
 let favorites: any[] = [];
+let isGuest = true;
 
 // --- Auth Handlers ---
 
@@ -58,10 +64,12 @@ async function handleLogout(): Promise<void> {
   lastLocation = null;
   lastWeatherData = null;
   favorites = [];
-  showAuthView();
+  isGuest = true;
+  showGuestAppView();
 }
 
 async function showLoggedInApp(email: string): Promise<void> {
+  isGuest = false;
   showAppView(email);
   try {
     favorites = await api.getFavorites();
@@ -112,6 +120,7 @@ async function handleFavoriteRemove(index: number): Promise<void> {
 }
 
 async function handleToggleFavorite(): Promise<void> {
+  if (isGuest) return;
   if (!lastLocation || !lastWeatherData) return;
 
   const existing = favorites.find(
@@ -136,6 +145,10 @@ async function handleToggleFavorite(): Promise<void> {
 }
 
 function renderWeatherWithFavorite(weather: WeatherData): void {
+  if (isGuest) {
+    renderWeather(weather, currentUnit, false);
+    return;
+  }
   const isSaved = lastLocation
     ? favorites.some(
         (f) =>
@@ -149,6 +162,7 @@ function renderWeatherWithFavorite(weather: WeatherData): void {
 // --- Core Handlers ---
 
 async function handleSearch(query: string): Promise<void> {
+  if (isGuest) showLoginLink();
   showLoading();
   try {
     const result = await api.searchWeather(query, currentUnit);
@@ -159,8 +173,10 @@ async function handleSearch(query: string): Promise<void> {
     lastLocation = result.location;
     lastWeatherData = result as any;
     renderWeatherWithFavorite(result as any);
-    favorites = await api.getFavorites();
-    refreshFavoritesUI();
+    if (!isGuest) {
+      favorites = await api.getFavorites();
+      refreshFavoritesUI();
+    }
   } catch (err: any) {
     showError(err.message || "Something went wrong.");
   }
@@ -199,6 +215,7 @@ async function handleGeolocate(): Promise<void> {
     return;
   }
 
+  if (isGuest) showLoginLink();
   showLoading();
   setGeoButtonLoading(true);
 
@@ -239,12 +256,22 @@ async function handleGeolocate(): Promise<void> {
 }
 
 async function handleHistoryToggle(): Promise<void> {
+  if (isGuest) return;
   try {
     const data = await api.getHistory();
     renderHistory(data.items);
   } catch {
     showError("Failed to load history.");
   }
+}
+
+function handleLoginClick(): void {
+  showAuthView();
+  showGuestLink();
+}
+
+function handleGuestLink(): void {
+  showGuestAppView();
 }
 
 // --- Init ---
@@ -264,6 +291,8 @@ async function init(): Promise<void> {
   onGeolocate(handleGeolocate);
   onThemeToggle(handleThemeToggle);
   onHistoryToggle(handleHistoryToggle);
+  onLoginClick(handleLoginClick);
+  onGuestLink(handleGuestLink);
 
   // Check if already logged in
   const isLoggedIn = await auth.checkAuth();
@@ -276,10 +305,11 @@ async function init(): Promise<void> {
         return;
       }
     } catch {
-      // Fall through to show auth
+      // Fall through to guest mode
     }
   }
-  showAuthView();
+  isGuest = true;
+  showGuestAppView();
 }
 
 init();

@@ -25,3 +25,19 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
     throw new AppError(401, "UNAUTHORIZED", "Invalid or expired token");
   }
 }
+
+export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return next();
+  }
+
+  try {
+    const token = authHeader.slice(7);
+    const payload = verifyAccessToken(token);
+    req.userId = payload.userId;
+  } catch {
+    // Invalid/expired token — treat as guest, do not 401
+  }
+  next();
+}
