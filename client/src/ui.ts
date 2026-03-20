@@ -173,6 +173,7 @@ export function applyTheme(theme: Theme): void {
 // ===========================================
 
 export function showLoading(): void {
+  authContainer.classList.add("hidden");
   welcomeContainer.classList.add("hidden");
   weatherContainer.classList.add("hidden");
   errorContainer.classList.add("hidden");
@@ -180,6 +181,7 @@ export function showLoading(): void {
 }
 
 export function showError(message: string): void {
+  authContainer.classList.add("hidden");
   loadingContainer.classList.add("hidden");
   weatherContainer.classList.add("hidden");
   welcomeContainer.classList.add("hidden");
@@ -319,6 +321,7 @@ export function renderWeather(
   isSaved: boolean = false,
   onToggleFavorite?: () => void
 ): void {
+  authContainer.classList.add("hidden");
   loadingContainer.classList.add("hidden");
   errorContainer.classList.add("hidden");
   welcomeContainer.classList.add("hidden");
@@ -443,7 +446,7 @@ export function showAppView(email: string): void {
 }
 
 export function showGuestAppView(): void {
-  authContainer.classList.add("hidden");
+  authContainer.classList.remove("hidden");
   logoutButton.classList.add("hidden");
   userEmailSpan.classList.add("hidden");
   historyButton.classList.add("hidden");
@@ -452,9 +455,9 @@ export function showGuestAppView(): void {
   loadingContainer.classList.add("hidden");
   errorContainer.classList.add("hidden");
   historyContainer.classList.add("hidden");
-  loginLink.classList.remove("hidden");
+  loginLink.classList.add("hidden");
   document.querySelector(".search-bar")?.classList.remove("hidden");
-  welcomeContainer.classList.remove("hidden");
+  welcomeContainer.classList.add("hidden");
 }
 
 export function onLoginClick(callback: () => void): void {
@@ -469,6 +472,14 @@ export function onGuestLink(callback: () => void): void {
     e.preventDefault();
     callback();
   });
+}
+
+export function showLoginLink(): void {
+  loginLink.classList.remove("hidden");
+}
+
+export function hideLoginLink(): void {
+  loginLink.classList.add("hidden");
 }
 
 export function showGuestLink(): void {

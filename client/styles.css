@@ -599,7 +599,15 @@ body {
 
 /* Air Quality */
 .air-quality-card {
-  margin-top: 1.5rem;
+  background: var(--color-surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1.5rem 1.25rem;
+  box-shadow: 0 1px 4px var(--color-shadow);
+  border: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+  transition: background 0.3s, border-color 0.3s;
 }
 
 .aqi-header {
@@ -710,6 +718,13 @@ body {
   color: var(--color-text);
 }
 .auth-title span { color: var(--color-accent); }
+.auth-benefits {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
 .auth-form { display: flex; flex-direction: column; gap: 0.75rem; }
 .auth-form input {
   padding: 0.85rem 1rem;

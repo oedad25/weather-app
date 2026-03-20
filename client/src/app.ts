@@ -22,6 +22,7 @@ import {
   showAuthView,
   showAppView,
   showGuestAppView,
+  showLoginLink,
   showGuestLink,
   showAuthError,
   clearAuthError,
@@ -161,6 +162,7 @@ function renderWeatherWithFavorite(weather: WeatherData): void {
 // --- Core Handlers ---
 
 async function handleSearch(query: string): Promise<void> {
+  if (isGuest) showLoginLink();
   showLoading();
   try {
     const result = await api.searchWeather(query, currentUnit);
@@ -213,6 +215,7 @@ async function handleGeolocate(): Promise<void> {
     return;
   }
 
+  if (isGuest) showLoginLink();
   showLoading();
   setGeoButtonLoading(true);
 
